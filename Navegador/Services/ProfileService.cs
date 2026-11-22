@@ -35,7 +35,7 @@ public sealed class ProfileService
     private static async Task<CoreWebView2Environment> CreateAsync(string userDataDir)
     {
         Directory.CreateDirectory(userDataDir);
-        return await CoreWebView2Environment.CreateAsync(null, userDataDir);
+        return await CoreWebView2Environment.CreateWithOptionsAsync(null, userDataDir, new CoreWebView2EnvironmentOptions());
     }
 
     public void DisposeIncognito()

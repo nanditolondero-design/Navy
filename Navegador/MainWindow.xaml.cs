@@ -26,7 +26,7 @@ public sealed partial class MainWindow : Window
     private readonly List<BrowserTab> _tabs = new();
     private bool _started;
 
-    private BrowserTab? Current =>
+    private BrowserTab? CurrentTab =>
         Tabs.SelectedItem is TabViewItem item ? _tabs.FirstOrDefault(t => t.Item == item) : null;
 
     public MainWindow()
@@ -85,7 +85,7 @@ public sealed partial class MainWindow : Window
 
         core.SourceChanged += (_, _) =>
         {
-            if (Current == tab) AddressBox.Text = core.Source;
+            if (CurrentTab == tab) AddressBox.Text = core.Source;
             UpdateNavButtons();
         };
 
@@ -93,7 +93,7 @@ public sealed partial class MainWindow : Window
         core.FaviconChanged += async (_, _) => await UpdateFaviconAsync(tab);
 
         // Los enlaces target=_blank se abren en una pestaña nueva del mismo modo
-        core.NewWindowRequested += (_, e) =>
+        core.NewWindowRequested += (s, e) =>
         {
             e.Handled = true;
             _ = AddTabAsync(tab.Incognito, e.Uri);
@@ -166,9 +166,9 @@ public sealed partial class MainWindow : Window
     private void Tabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         foreach (var t in _tabs)
-            t.View.Visibility = t.Item == Tabs.SelectedItem ? Visibility.Visible : Visibility.Collapsed;
+            t.View.Visibility = ReferenceEquals(t.Item, Tabs.SelectedItem) ? Visibility.Visible : Visibility.Collapsed;
 
-        var cur = Current;
+        var cur = CurrentTab;
         if (cur is null) return;
 
         AddressBox.Text = cur.View.CoreWebView2?.Source ?? "";
@@ -185,14 +185,14 @@ public sealed partial class MainWindow : Window
 
     private void UpdateNavButtons()
     {
-        var core = Current?.View.CoreWebView2;
+        var core = CurrentTab?.View.CoreWebView2;
         BackBtn.IsEnabled = core?.CanGoBack ?? false;
         ForwardBtn.IsEnabled = core?.CanGoForward ?? false;
     }
 
-    private void Back_Click(object sender, RoutedEventArgs e) => Current?.View.CoreWebView2?.GoBack();
-    private void Forward_Click(object sender, RoutedEventArgs e) => Current?.View.CoreWebView2?.GoForward();
-    private void Reload_Click(object sender, RoutedEventArgs e) => Current?.View.CoreWebView2?.Reload();
+    private void Back_Click(object sender, RoutedEventArgs e) => CurrentTab?.View.CoreWebView2?.GoBack();
+    private void Forward_Click(object sender, RoutedEventArgs e) => CurrentTab?.View.CoreWebView2?.GoForward();
+    private void Reload_Click(object sender, RoutedEventArgs e) => CurrentTab?.View.CoreWebView2?.Reload();
 
     private void Address_GotFocus(object sender, RoutedEventArgs e) => AddressBox.SelectAll();
 
@@ -200,8 +200,8 @@ public sealed partial class MainWindow : Window
     {
         if (e.Key != VirtualKey.Enter) return;
         e.Handled = true;
-        Current?.View.CoreWebView2?.Navigate(ToUrl(AddressBox.Text));
-        Current?.View.Focus(FocusState.Programmatic);
+        CurrentTab?.View.CoreWebView2?.Navigate(ToUrl(AddressBox.Text));
+        CurrentTab?.View.Focus(FocusState.Programmatic);
     }
 
     private static string ToUrl(string input)
@@ -222,7 +222,7 @@ public sealed partial class MainWindow : Window
     // Atajos (funcionan cuando el foco está en la barra, no dentro de la página web)
     private void NewTabAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; _ = AddTabAsync(false, null); }
     private void NewIncognitoAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; _ = AddTabAsync(true, null); }
-    private void CloseTabAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; if (Current is { } t) CloseTab(t); }
+    private void CloseTabAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; if (CurrentTab is { } t) CloseTab(t); }
     private void FocusAddressAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; AddressBox.Focus(FocusState.Programmatic); }
-    private void ReloadAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; Current?.View.CoreWebView2?.Reload(); }
+    private void ReloadAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; CurrentTab?.View.CoreWebView2?.Reload(); }
 }
