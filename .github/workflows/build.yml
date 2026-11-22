@@ -1,0 +1,29 @@
+name: Compilar Navegador
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['Navegador/**']
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}   # toma el commit posterior a la descompresión
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publicar (self-contained, x64)
+        run: dotnet publish Navegador/Navegador.csproj -c Release -r win-x64 -p:Platform=x64 -o publish
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: Navegador-win-x64
+          path: publish/

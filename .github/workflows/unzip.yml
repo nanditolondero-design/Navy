@@ -1,0 +1,45 @@
+name: Descomprimir ZIP y compilar
+
+on:
+  push:
+    branches: [main]
+    paths: ['*.zip']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    outputs:
+      unzipped: ${{ steps.unzip.outputs.unzipped }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descomprimir los ZIP de la raíz en el repo
+        id: unzip
+        run: |
+          shopt -s nullglob
+          zips=(*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "No hay ZIPs para descomprimir"
+            echo "unzipped=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          for z in "${zips[@]}"; do
+            echo "Descomprimiendo $z"
+            unzip -o -q "$z" -d .
+            git rm -q -f "$z"
+          done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Descomprimir ${zips[*]}" || true
+          git push
+          echo "unzipped=true" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: unzip
+    if: needs.unzip.outputs.unzipped == 'true'
+    uses: ./.github/workflows/build.yml
