@@ -16,10 +16,13 @@
             <KeyboardAccelerator Key="N" Modifiers="Control,Shift" Invoked="NewIncognitoAccel_Invoked"/>
             <KeyboardAccelerator Key="W" Modifiers="Control" Invoked="CloseTabAccel_Invoked"/>
             <KeyboardAccelerator Key="L" Modifiers="Control" Invoked="FocusAddressAccel_Invoked"/>
+            <KeyboardAccelerator Key="D" Modifiers="Control" Invoked="BookmarkAccel_Invoked"/>
+            <KeyboardAccelerator Key="H" Modifiers="Control" Invoked="HistoryAccel_Invoked"/>
+            <KeyboardAccelerator Key="J" Modifiers="Control" Invoked="DownloadsAccel_Invoked"/>
             <KeyboardAccelerator Key="F5" Invoked="ReloadAccel_Invoked"/>
         </Grid.KeyboardAccelerators>
 
-        <!-- Solo la tira de pestañas; las páginas web viven en ContentHost -->
+        <!-- La tira de pestañas ocupa el lugar de la barra de título; el espacio vacío se puede arrastrar -->
         <TabView x:Name="Tabs" Grid.Row="0"
                  VerticalAlignment="Top"
                  IsAddTabButtonVisible="True"
@@ -27,50 +30,82 @@
                  TabWidthMode="Equal"
                  AddTabButtonClick="Tabs_AddTabButtonClick"
                  TabCloseRequested="Tabs_TabCloseRequested"
-                 SelectionChanged="Tabs_SelectionChanged"/>
+                 SelectionChanged="Tabs_SelectionChanged">
+            <TabView.TabStripFooter>
+                <Grid x:Name="CustomDragRegion" MinWidth="188" Background="Transparent"/>
+            </TabView.TabStripFooter>
+        </TabView>
 
-        <Grid x:Name="Toolbar" Grid.Row="1" Padding="8,4" ColumnSpacing="4">
+        <Grid x:Name="Toolbar" Grid.Row="1" Padding="8,4" ColumnSpacing="8">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Button x:Name="BackBtn" Grid.Column="0" Click="Back_Click" ToolTipService.ToolTip="Atrás">
-                <FontIcon Glyph="&#xE72B;"/>
-            </Button>
-            <Button x:Name="ForwardBtn" Grid.Column="1" Click="Forward_Click" ToolTipService.ToolTip="Adelante">
-                <FontIcon Glyph="&#xE72A;"/>
-            </Button>
-            <Button x:Name="ReloadBtn" Grid.Column="2" Click="Reload_Click" ToolTipService.ToolTip="Recargar">
-                <FontIcon Glyph="&#xE72C;"/>
-            </Button>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
+                <Button x:Name="BackBtn" Click="Back_Click" ToolTipService.ToolTip="Atrás">
+                    <FontIcon Glyph="&#xE72B;"/>
+                </Button>
+                <Button x:Name="ForwardBtn" Click="Forward_Click" ToolTipService.ToolTip="Adelante">
+                    <FontIcon Glyph="&#xE72A;"/>
+                </Button>
+                <Button x:Name="ReloadBtn" Click="Reload_Click" ToolTipService.ToolTip="Recargar">
+                    <FontIcon Glyph="&#xE72C;"/>
+                </Button>
+            </StackPanel>
 
-            <TextBox x:Name="AddressBox" Grid.Column="3"
-                     PlaceholderText="Buscá en Google o escribí una dirección"
-                     KeyDown="Address_KeyDown"
-                     GotFocus="Address_GotFocus"/>
+            <Grid Grid.Column="1" ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox x:Name="AddressBox" Grid.Column="0"
+                         PlaceholderText="Buscá o escribí una dirección"
+                         KeyDown="Address_KeyDown"
+                         GotFocus="Address_GotFocus"/>
+                <Button x:Name="StarBtn" Grid.Column="1" Click="Star_Click" ToolTipService.ToolTip="Agregar a marcadores (Ctrl+D)">
+                    <FontIcon x:Name="StarIcon" Glyph="&#xE734;"/>
+                </Button>
+            </Grid>
 
-            <TextBlock x:Name="IncognitoBadge" Grid.Column="4" Text="🕶 Incógnito"
-                       VerticalAlignment="Center" Visibility="Collapsed"/>
-            <TextBlock x:Name="BlockedText" Grid.Column="5" Text="🛡 0"
-                       VerticalAlignment="Center" ToolTipService.ToolTip="Solicitudes bloqueadas"/>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                <TextBlock x:Name="IncognitoBadge" Text="🕶 Incógnito" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,0,8,0"/>
 
-            <Button Grid.Column="6" ToolTipService.ToolTip="Menú">
-                <FontIcon Glyph="&#xE712;"/>
-                <Button.Flyout>
-                    <MenuFlyout>
-                        <MenuFlyoutItem Text="Nueva pestaña" Click="NewTab_Click"/>
-                        <MenuFlyoutItem Text="Nueva pestaña de incógnito" Click="NewIncognito_Click"/>
-                        <MenuFlyoutSeparator/>
-                        <ToggleMenuFlyoutItem x:Name="AdblockToggle" Text="Bloquear anuncios" IsChecked="True" Click="AdblockToggle_Click"/>
-                    </MenuFlyout>
-                </Button.Flyout>
-            </Button>
+                <Button x:Name="ShieldBtn" Content="🛡 0" ToolTipService.ToolTip="Escudos">
+                    <Button.Flyout>
+                        <Flyout Opening="ShieldFlyout_Opening">
+                            <StackPanel Width="280" Spacing="8">
+                                <TextBlock x:Name="ShieldHostText" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <ToggleSwitch x:Name="SiteShieldToggle" Header="Escudos en este sitio"
+                                              OnContent="Activos" OffContent="Desactivados"
+                                              Toggled="SiteShield_Toggled"/>
+                                <TextBlock x:Name="ShieldCountText" Opacity="0.7" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Button Click="DownloadsBtn_Click" ToolTipService.ToolTip="Descargas (Ctrl+J)">
+                    <FontIcon Glyph="&#xE896;"/>
+                </Button>
+
+                <Button ToolTipService.ToolTip="Menú">
+                    <FontIcon Glyph="&#xE712;"/>
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Nueva pestaña" Click="NewTab_Click"/>
+                            <MenuFlyoutItem Text="Nueva pestaña de incógnito" Click="NewIncognito_Click"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Descargas" Click="DownloadsBtn_Click"/>
+                            <MenuFlyoutItem Text="Historial" Click="History_Click"/>
+                            <MenuFlyoutItem Text="Marcadores" Click="Bookmarks_Click"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Configuración" Click="Settings_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <Grid x:Name="ContentHost" Grid.Row="2"/>

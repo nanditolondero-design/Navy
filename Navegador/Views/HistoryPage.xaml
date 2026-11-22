@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Navegador.Views.HistoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <TextBlock Text="Historial" Style="{StaticResource TitleTextBlockStyle}"/>
+            <Button Content="Borrar historial" Click="Clear_Click" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <TextBox x:Name="SearchBox" Grid.Row="1" PlaceholderText="Buscar en el historial" TextChanged="SearchBox_TextChanged"/>
+
+        <ListView x:Name="ItemsList" Grid.Row="2" IsItemClickEnabled="True" SelectionMode="None" ItemClick="ItemsList_ItemClick">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Padding="0,6" Spacing="2">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding Url}" Opacity="0.7" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="{Binding TimeText}" Opacity="0.5" FontSize="12"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>
