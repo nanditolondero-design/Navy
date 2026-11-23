@@ -5,6 +5,16 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Grid x:Name="Root">
+        <Grid.Resources>
+            <!-- Botones planos y redondeados, como en la barra de Safari -->
+            <Style x:Key="ToolBtn" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="CornerRadius" Value="8"/>
+                <Setter Property="Padding" Value="9,7"/>
+            </Style>
+        </Grid.Resources>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -25,54 +35,85 @@
         <!-- La tira de pestañas ocupa el lugar de la barra de título; el espacio vacío se puede arrastrar -->
         <TabView x:Name="Tabs" Grid.Row="0"
                  VerticalAlignment="Top"
+                 Background="Transparent"
                  IsAddTabButtonVisible="True"
                  CanReorderTabs="True"
                  TabWidthMode="Equal"
                  AddTabButtonClick="Tabs_AddTabButtonClick"
                  TabCloseRequested="Tabs_TabCloseRequested"
                  SelectionChanged="Tabs_SelectionChanged">
+            <TabView.Resources>
+                <SolidColorBrush x:Key="TabViewBackground" Color="Transparent"/>
+            </TabView.Resources>
             <TabView.TabStripFooter>
                 <Grid x:Name="CustomDragRegion" MinWidth="188" Background="Transparent"/>
             </TabView.TabStripFooter>
         </TabView>
 
-        <Grid x:Name="Toolbar" Grid.Row="1" Padding="8,4" ColumnSpacing="8">
+        <Grid x:Name="Toolbar" Grid.Row="1" Padding="12,6,12,8" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4">
-                <Button x:Name="BackBtn" Click="Back_Click" ToolTipService.ToolTip="Atrás">
-                    <FontIcon Glyph="&#xE72B;"/>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                <Button x:Name="BackBtn" Style="{StaticResource ToolBtn}" Click="Back_Click" ToolTipService.ToolTip="Atrás">
+                    <FontIcon Glyph="&#xE72B;" FontSize="15"/>
                 </Button>
-                <Button x:Name="ForwardBtn" Click="Forward_Click" ToolTipService.ToolTip="Adelante">
-                    <FontIcon Glyph="&#xE72A;"/>
+                <Button x:Name="ForwardBtn" Style="{StaticResource ToolBtn}" Click="Forward_Click" ToolTipService.ToolTip="Adelante">
+                    <FontIcon Glyph="&#xE72A;" FontSize="15"/>
                 </Button>
-                <Button x:Name="ReloadBtn" Click="Reload_Click" ToolTipService.ToolTip="Recargar">
-                    <FontIcon Glyph="&#xE72C;"/>
+                <Button x:Name="ReloadBtn" Style="{StaticResource ToolBtn}" Click="Reload_Click" ToolTipService.ToolTip="Recargar">
+                    <FontIcon Glyph="&#xE72C;" FontSize="15"/>
                 </Button>
             </StackPanel>
 
-            <Grid Grid.Column="1" ColumnSpacing="4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="AddressBox" Grid.Column="0"
-                         PlaceholderText="Buscá o escribí una dirección"
-                         KeyDown="Address_KeyDown"
-                         GotFocus="Address_GotFocus"/>
-                <Button x:Name="StarBtn" Grid.Column="1" Click="Star_Click" ToolTipService.ToolTip="Agregar a marcadores (Ctrl+D)">
-                    <FontIcon x:Name="StarIcon" Glyph="&#xE734;"/>
-                </Button>
-            </Grid>
+            <!-- Barra de direcciones centrada, tipo píldora -->
+            <Border x:Name="AddressPill" Grid.Column="1"
+                    MaxWidth="680" Height="34"
+                    HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                    CornerRadius="10" BorderThickness="1"
+                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                <Grid Padding="10,0,2,0" ColumnSpacing="4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                    <FontIcon x:Name="LockIcon" Grid.Column="0" Glyph="&#xE72E;" FontSize="12" Opacity="0.6"
+                              VerticalAlignment="Center" Visibility="Collapsed"/>
+
+                    <TextBox x:Name="AddressBox" Grid.Column="1"
+                             PlaceholderText="Buscá o escribí una dirección"
+                             TextAlignment="Center" MinHeight="30" Padding="4,6"
+                             BorderThickness="0" Background="Transparent" VerticalAlignment="Center"
+                             KeyDown="Address_KeyDown"
+                             GotFocus="Address_GotFocus"
+                             LostFocus="Address_LostFocus">
+                        <TextBox.Resources>
+                            <SolidColorBrush x:Key="TextControlBackground" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBorderBrush" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="Transparent"/>
+                            <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent"/>
+                        </TextBox.Resources>
+                    </TextBox>
+
+                    <Button x:Name="StarBtn" Grid.Column="2" Style="{StaticResource ToolBtn}" Padding="7,5"
+                            Click="Star_Click" ToolTipService.ToolTip="Agregar a marcadores (Ctrl+D)">
+                        <FontIcon x:Name="StarIcon" Glyph="&#xE734;" FontSize="14"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
                 <TextBlock x:Name="IncognitoBadge" Text="🕶 Incógnito" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,0,8,0"/>
 
-                <Button x:Name="ShieldBtn" Content="🛡 0" ToolTipService.ToolTip="Escudos">
+                <Button x:Name="ShieldBtn" Style="{StaticResource ToolBtn}" Content="🛡 0" ToolTipService.ToolTip="Escudos">
                     <Button.Flyout>
                         <Flyout Opening="ShieldFlyout_Opening">
                             <StackPanel Width="280" Spacing="8">
@@ -86,12 +127,12 @@
                     </Button.Flyout>
                 </Button>
 
-                <Button Click="DownloadsBtn_Click" ToolTipService.ToolTip="Descargas (Ctrl+J)">
-                    <FontIcon Glyph="&#xE896;"/>
+                <Button Style="{StaticResource ToolBtn}" Click="DownloadsBtn_Click" ToolTipService.ToolTip="Descargas (Ctrl+J)">
+                    <FontIcon Glyph="&#xE896;" FontSize="15"/>
                 </Button>
 
-                <Button ToolTipService.ToolTip="Menú">
-                    <FontIcon Glyph="&#xE712;"/>
+                <Button Style="{StaticResource ToolBtn}" ToolTipService.ToolTip="Menú">
+                    <FontIcon Glyph="&#xE712;" FontSize="15"/>
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem Text="Nueva pestaña" Click="NewTab_Click"/>
@@ -106,6 +147,11 @@
                     </Button.Flyout>
                 </Button>
             </StackPanel>
+
+            <!-- Barra de progreso fina al pie de la barra de herramientas -->
+            <ProgressBar x:Name="LoadBar" Grid.ColumnSpan="3" VerticalAlignment="Bottom"
+                         Margin="-12,0,-12,-8" IsIndeterminate="True" Visibility="Collapsed"
+                         MinHeight="2" Height="2"/>
         </Grid>
 
         <Grid x:Name="ContentHost" Grid.Row="2"/>

@@ -27,6 +27,8 @@ public sealed partial class MainWindow : Window
     private CoreWebView2Profile? _normalProfile;
     private bool _started;
     private bool _updatingShield;
+    private bool _addressFocused;
+    private string _addressUrl = "";
 
     private BrowserTab? CurrentTab =>
         Tabs.SelectedItem is TabViewItem item ? _tabs.FirstOrDefault(t => ReferenceEquals(t.Item, item)) : null;
@@ -36,6 +38,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         Title = "Navegador";
         ExtendsContentIntoTitleBar = true; // la barra de pestañas hace de barra de título
+        SystemBackdrop = new MicaBackdrop { Kind = Microsoft.UI.Composition.SystemBackdrops.MicaKind.BaseAlt };
 
         _services = new BrowserServices
         {
@@ -65,14 +68,58 @@ public sealed partial class MainWindow : Window
             _started = true;
 
             SetTitleBar(CustomDragRegion);
+            try { AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "icon.ico")); } catch { }
             if (AppWindowTitleBar.IsCustomizationSupported())
             {
                 AppWindow.TitleBar.ButtonBackgroundColor = Microsoft.UI.Colors.Transparent;
                 AppWindow.TitleBar.ButtonInactiveBackgroundColor = Microsoft.UI.Colors.Transparent;
             }
 
-            await AddTabAsync(incognito: false, url: null);
+            // Argumentos de línea de comandos (los usa el workflow de capturas)
+            var cli = ParseArgs();
+            if (cli.TryGetValue("size", out var size))
+            {
+                var dims = size.Split('x');
+                if (dims.Length == 2 && int.TryParse(dims[0], out var w) && int.TryParse(dims[1], out var h))
+                    AppWindow.MoveAndResize(new Windows.Graphics.RectInt32(0, 0, w, h));
+            }
+
+            string? startUrl = cli.TryGetValue("url", out var cliUrl) && cliUrl.Length > 0 ? cliUrl : null;
+            await AddTabAsync(cli.ContainsKey("incognito"), startUrl);
+
+            if (cli.TryGetValue("open", out var open))
+            {
+                TabKind? kind = open switch
+                {
+                    "settings" => TabKind.Settings,
+                    "history" => TabKind.History,
+                    "bookmarks" => TabKind.Bookmarks,
+                    "downloads" => TabKind.Downloads,
+                    _ => null
+                };
+                if (kind is { } k) OpenInternalTab(k);
+            }
+
+            if (cli.ContainsKey("demo-shields"))
+            {
+                await Task.Delay(6000);
+                ShieldBtn.Flyout?.ShowAt(ShieldBtn);
+            }
         };
+    }
+
+    private static Dictionary<string, string> ParseArgs()
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var arg in Environment.GetCommandLineArgs().Skip(1))
+        {
+            if (!arg.StartsWith("--")) continue;
+            var body = arg[2..];
+            var i = body.IndexOf('=');
+            if (i < 0) map[body] = "";
+            else map[body[..i]] = body[(i + 1)..];
+        }
+        return map;
     }
 
     // ───────────── Pestañas ─────────────
@@ -162,7 +209,7 @@ public sealed partial class MainWindow : Window
         core.SourceChanged += (_, _) =>
         {
             tab.PageHost = HostOf(core.Source);
-            if (ReferenceEquals(CurrentTab, tab)) AddressBox.Text = core.Source;
+            if (ReferenceEquals(CurrentTab, tab)) SetAddress(core.Source);
             UpdateNavButtons();
             UpdateStar();
         };
@@ -246,7 +293,11 @@ public sealed partial class MainWindow : Window
             e.Cancel = true;
             var url = target.AbsoluteUri;
             DispatcherQueue.TryEnqueue(() => tab.View?.CoreWebView2?.Navigate(url));
+            return;
         }
+
+        tab.Loading = true;
+        UpdateLoading();
     }
 
     private void OnNavigationCompleted(BrowserTab tab, CoreWebView2NavigationCompletedEventArgs e)
@@ -254,7 +305,12 @@ public sealed partial class MainWindow : Window
         var core = tab.View!.CoreWebView2;
 
         // La navegación que cancelamos para redirigirla no cuenta
-        if (e.WebErrorStatus == CoreWebView2WebErrorStatus.OperationCanceled) return;
+        if (e.WebErrorStatus == CoreWebView2WebErrorStatus.OperationCanceled)
+        {
+            tab.Loading = false;
+            UpdateLoading();
+            return;
+        }
 
         // Si falló el intento por HTTPS, se vuelve a HTTP una sola vez
         if (!e.IsSuccess && tab.HttpFallbackUrl is { } fallback && SameHost(core.Source, tab.UpgradedHttps))
@@ -267,6 +323,8 @@ public sealed partial class MainWindow : Window
         }
         tab.HttpFallbackUrl = null;
         tab.UpgradedHttps = null;
+        tab.Loading = false;
+        UpdateLoading();
 
         if (e.IsSuccess && !tab.Incognito && HostOf(core.Source) is not null)
         {
@@ -457,7 +515,8 @@ public sealed partial class MainWindow : Window
         var cur = CurrentTab;
         if (cur is null) return;
 
-        AddressBox.Text = cur.View?.CoreWebView2?.Source ?? "";
+        SetAddress(cur.View?.CoreWebView2?.Source);
+        UpdateLoading();
         ApplyIncognitoLook(cur.Incognito);
         UpdateNavButtons();
         UpdateShield();
@@ -496,7 +555,41 @@ public sealed partial class MainWindow : Window
     private void Forward_Click(object sender, RoutedEventArgs e) => CurrentTab?.View?.CoreWebView2?.GoForward();
     private void Reload_Click(object sender, RoutedEventArgs e) => CurrentTab?.View?.CoreWebView2?.Reload();
 
-    private void Address_GotFocus(object sender, RoutedEventArgs e) => AddressBox.SelectAll();
+    // Como Safari: sin foco se muestra solo el dominio; al enfocar, la dirección completa
+    private void SetAddress(string? url)
+    {
+        _addressUrl = url ?? "";
+        if (!_addressFocused) ShowAddressDisplay();
+
+        var scheme = Uri.TryCreate(_addressUrl, UriKind.Absolute, out var u) ? u.Scheme : "";
+        var isWeb = scheme == Uri.UriSchemeHttp || scheme == Uri.UriSchemeHttps;
+        LockIcon.Visibility = isWeb ? Visibility.Visible : Visibility.Collapsed;
+        LockIcon.Glyph = scheme == Uri.UriSchemeHttps ? "\uE72E" : "\uE785";
+    }
+
+    private void ShowAddressDisplay()
+    {
+        var host = HostOf(_addressUrl);
+        AddressBox.Text = host is null ? _addressUrl : (host.StartsWith("www.") ? host[4..] : host);
+    }
+
+    private void Address_GotFocus(object sender, RoutedEventArgs e)
+    {
+        _addressFocused = true;
+        AddressBox.Text = _addressUrl;
+        AddressBox.TextAlignment = TextAlignment.Left;
+        AddressBox.SelectAll();
+    }
+
+    private void Address_LostFocus(object sender, RoutedEventArgs e)
+    {
+        _addressFocused = false;
+        AddressBox.TextAlignment = TextAlignment.Center;
+        ShowAddressDisplay();
+    }
+
+    private void UpdateLoading() =>
+        LoadBar.Visibility = CurrentTab?.Loading == true ? Visibility.Visible : Visibility.Collapsed;
 
     private void Address_KeyDown(object sender, KeyRoutedEventArgs e)
     {

@@ -14,6 +14,7 @@ public sealed class BrowserTab
     public TabKind Kind { get; init; } = TabKind.Web;
 
     // Estado de las páginas web
+    public bool Loading { get; set; }
     public int Blocked { get; set; }
     public string? PageHost { get; set; }
     public string? UpgradedHttps { get; set; }
