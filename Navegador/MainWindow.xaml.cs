@@ -54,6 +54,7 @@ public sealed partial class MainWindow : Window
         _adblock.Enabled = _settings.AdblockEnabled;
         _adblock.LoadDefaults();
         _ = _adblock.UpdateFromRemoteAsync();
+        _ = _adblock.UpdateFilterListsAsync();
         _bookmarks.Changed += UpdateStar;
 
         Closed += (_, _) =>
@@ -226,6 +227,7 @@ public sealed partial class MainWindow : Window
 
         core.NavigationStarting += (s, e) => OnNavigationStarting(tab, e);
         core.NavigationCompleted += (s, e) => OnNavigationCompleted(tab, e);
+        core.DOMContentLoaded += async (s, e) => await InjectCosmeticFilterAsync(tab);
         core.DownloadStarting += async (s, e) => await OnDownloadStartingAsync(e);
 
         // Escudos: bloqueo de anuncios/rastreadores y señales de privacidad
@@ -349,11 +351,46 @@ public sealed partial class MainWindow : Window
         if (e.ResourceContext == CoreWebView2WebResourceContext.Document) return; // nunca bloquear la página en sí
         if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out var uri)) return;
 
-        if (_adblock.ShouldBlock(uri))
+        if (_adblock.ShouldBlock(uri, host, TypeBit(e.ResourceContext)))
         {
             e.Response = tab.View!.CoreWebView2.Environment.CreateWebResourceResponse(null, 403, "Blocked", "");
             tab.Blocked++;
             if (ReferenceEquals(CurrentTab, tab)) UpdateShield();
+        }
+    }
+
+    private static int TypeBit(CoreWebView2WebResourceContext context) => context switch
+    {
+        CoreWebView2WebResourceContext.Script => FilterEngine.Script,
+        CoreWebView2WebResourceContext.Image => FilterEngine.Image,
+        CoreWebView2WebResourceContext.Stylesheet => FilterEngine.Stylesheet,
+        CoreWebView2WebResourceContext.Media => FilterEngine.Media,
+        CoreWebView2WebResourceContext.Font => FilterEngine.Font,
+        CoreWebView2WebResourceContext.XmlHttpRequest => FilterEngine.Xhr,
+        CoreWebView2WebResourceContext.Fetch => FilterEngine.Xhr,
+        CoreWebView2WebResourceContext.Ping => FilterEngine.Ping,
+        _ => FilterEngine.Other
+    };
+
+    // Oculta los espacios publicitarios que quedan en la página (banners, contenedores vacíos)
+    private async Task InjectCosmeticFilterAsync(BrowserTab tab)
+    {
+        if (!_adblock.Enabled) return;
+        var host = tab.PageHost;
+        if (host is null || _settings.ShieldsOffHosts.Contains(host)) return;
+
+        var css = _adblock.CosmeticCss(host);
+        if (css.Length == 0) return;
+
+        var js = "(()=>{const s=document.createElement('style');s.textContent=" +
+                 System.Text.Json.JsonSerializer.Serialize(css) +
+                 ";(document.head||document.documentElement).appendChild(s);})();";
+        try
+        {
+            await tab.View!.CoreWebView2.ExecuteScriptAsync(js);
+        }
+        catch
+        {
         }
     }
 

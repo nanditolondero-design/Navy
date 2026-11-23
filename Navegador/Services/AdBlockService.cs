@@ -13,7 +13,15 @@ public sealed class AdBlockService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Navegador");
     private static readonly string CacheFile = Path.Combine(CacheDir, "blocklist-cache.txt");
 
+    private static readonly (string File, string Url)[] FilterLists =
+    {
+        ("easylist.txt", "https://easylist.to/easylist/easylist.txt"),
+        ("easyprivacy.txt", "https://easylist.to/easylist/easyprivacy.txt"),
+        ("easylist-es.txt", "https://easylist-downloads.adblockplus.org/easylistspanish.txt")
+    };
+
     private volatile HashSet<string> _domains = new(StringComparer.OrdinalIgnoreCase);
+    private volatile FilterEngine? _engine;
 
     public bool Enabled { get; set; } = true;
     public int BlockedCount { get; set; }
@@ -59,6 +67,56 @@ public sealed class AdBlockService
         }
         _domains = set;
     }
+
+    /// <summary>Descarga (con caché de 7 días) EasyList, EasyPrivacy y EasyList Spanish y arma el motor de filtros.</summary>
+    public async Task UpdateFilterListsAsync()
+    {
+        try
+        {
+            var lines = new List<string>();
+            foreach (var (file, url) in FilterLists)
+            {
+                var text = await GetCachedAsync(file, url);
+                if (text is not null) lines.AddRange(text.Split('\n'));
+            }
+            if (lines.Count == 0) return;
+            _engine = await Task.Run(() => FilterEngine.Parse(lines));
+        }
+        catch
+        {
+        }
+    }
+
+    private static async Task<string?> GetCachedAsync(string fileName, string url)
+    {
+        var path = Path.Combine(CacheDir, fileName);
+        try
+        {
+            if (File.Exists(path) && DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < TimeSpan.FromDays(7))
+                return await File.ReadAllTextAsync(path);
+
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+            var text = await http.GetStringAsync(url);
+            Directory.CreateDirectory(CacheDir);
+            await File.WriteAllTextAsync(path, text);
+            return text;
+        }
+        catch
+        {
+            // sin conexión: se usa la copia vieja si existe
+            return File.Exists(path) ? await File.ReadAllTextAsync(path) : null;
+        }
+    }
+
+    /// <summary>Bloqueo completo: dominios conocidos + reglas de las listas (rutas, terceros, tipos de recurso).</summary>
+    public bool ShouldBlock(Uri uri, string? pageHost, int typeBit)
+    {
+        if (ShouldBlock(uri)) return true;
+        return _engine?.ShouldBlock(uri, pageHost, typeBit) ?? false;
+    }
+
+    /// <summary>CSS para ocultar los elementos publicitarios de la página.</summary>
+    public string CosmeticCss(string host) => _engine?.BuildCosmeticCss(host) ?? FilterEngine.CuratedCss();
 
     public bool ShouldBlock(Uri uri)
     {

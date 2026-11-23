@@ -18,8 +18,8 @@
 - **Interfaz tipo Safari:** fondo translúcido (Mica), barra de direcciones en píldora centrada que muestra solo el dominio, botones planos y barra de progreso fina.
 - **Pestañas integradas en la barra de título**, con atajos de teclado.
 - **Modo incógnito:** perfil temporal aislado que se borra al cerrar la última pestaña y no guarda historial.
-- **Descargas:** pestaña propia con progreso y un selector para elegir dónde guardar cada archivo.
-- **Escudos estilo Brave:** bloqueo de anuncios y rastreadores, HTTPS automático, limpieza de parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`...), señales GPC/DNT, prevención de seguimiento y apagado por sitio.
+- **Descargas:** pestaña propia con progreso y un selector para elegir dónde guardar cada archivo. La lista se guarda entre sesiones.
+- **Escudos estilo Brave:** bloqueo de anuncios y rastreadores con listas EasyList, EasyPrivacy y EasyList Spanish (reglas de red y ocultamiento de elementos), HTTPS automático, limpieza de parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`...), señales GPC/DNT, prevención de seguimiento y apagado por sitio.
 - **Historial y marcadores** guardados en local.
 - **Importar desde Google Chrome:** marcadores e historial.
 - **Buscador a elección:** Google, DuckDuckGo, Brave Search o Bing.
@@ -91,10 +91,9 @@ docs/                        Ícono y capturas usados en este README
 
 ## Limitaciones actuales
 
-- El bloqueo de anuncios es por dominio: no oculta elementos de las páginas ni frena anuncios servidos desde el dominio del propio sitio.
-- Del importador de Chrome faltan contraseñas, cookies y extensiones.
-- No hay sincronización de cuenta de Google.
-- La lista de descargas solo vive mientras la app está abierta.
+- El bloqueo cubre reglas de red y ocultamiento de elementos de las listas de filtros. No incluye reglas con expresiones regulares ni filtros avanzados (por ejemplo, los anuncios de video de YouTube).
+- Del importador de Chrome faltan contraseñas, cookies y extensiones: Chrome las cifra con una clave atada a su propio programa y no hay una forma legítima de leerlas desde otra app.
+- No hay sincronización de cuenta de Google: Google no ofrece una API pública para Chrome Sync.
 
 ## Capturas automáticas
 
