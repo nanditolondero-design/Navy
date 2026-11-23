@@ -1,0 +1,54 @@
+name: Capturas de pantalla
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publicar la app
+        run: dotnet publish Navegador/Navegador.csproj -c Release -r win-x64 -p:Platform=x64 -o publish
+
+      - name: Tomar capturas
+        continue-on-error: true
+        shell: pwsh
+        run: ./scripts/screenshots.ps1 -Exe "$PWD\publish\Navegador.exe" -OutDir "$PWD\docs\screenshots"
+
+      - name: Subir capturas como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: docs/screenshots/*.png
+          if-no-files-found: ignore
+
+      - name: Guardar capturas en el repo
+        continue-on-error: true
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "Sin cambios en las capturas"
+            exit 0
+          fi
+          git commit -m "Actualizar capturas de pantalla"
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && break
+            echo "Reintento $i..."
+            sleep 3
+          done

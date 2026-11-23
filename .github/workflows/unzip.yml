@@ -54,3 +54,8 @@ jobs:
     needs: unzip
     if: needs.unzip.outputs.unzipped == 'true'
     uses: ./.github/workflows/build.yml
+
+  screenshots:
+    needs: [unzip, build]
+    if: needs.unzip.outputs.unzipped == 'true'
+    uses: ./.github/workflows/screenshots.yml
