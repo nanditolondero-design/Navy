@@ -20,8 +20,8 @@ public sealed partial class MainWindow
 {
     private readonly SessionService _session = new();
     private readonly Stack<string> _closedTabs = new();
-    private DispatcherQueueTimer? _sessionTimer;
-    private DispatcherQueueTimer? _suspendTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _sessionTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _suspendTimer;
     private BrowserTab? _prevTab;
     private List<Suggestion> _suggestions = new();
     private bool _overSuggest;
