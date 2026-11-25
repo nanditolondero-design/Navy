@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['Navegador/**']
+    paths: ['Navegador/**', 'installer/**']
 
 jobs:
   build:
@@ -27,3 +27,19 @@ jobs:
         with:
           name: Navegador-win-x64
           path: publish/
+
+      # El instalador es opcional: si falla, la compilación sigue valiendo
+      - name: Crear instalador
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" installer\navegador.iss
+
+      - name: Subir instalador
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Navegador-Setup
+          path: installer-output/*.exe
+          if-no-files-found: ignore
