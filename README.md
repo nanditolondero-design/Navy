@@ -16,7 +16,12 @@
 ## Características
 
 - **Interfaz tipo Safari:** fondo translúcido (Mica), barra de direcciones en píldora centrada que muestra solo el dominio, botones planos y barra de progreso fina.
-- **Pestañas integradas en la barra de título**, con atajos de teclado.
+- **Pestañas integradas en la barra de título**, con atajos de teclado que funcionan también dentro de la página. Menú por pestaña (duplicar, silenciar, cerrar las demás), indicador de sonido, reabrir la última cerrada y restaurar las pestañas al abrir.
+- **Página de inicio** con buscador y favoritos, **barra de marcadores** y **sugerencias** en la barra de direcciones (marcadores, historial y búsqueda).
+- **Buscar en la página**, zoom por sitio, imprimir, guardar como PDF, herramientas de desarrollo y pantalla completa (también para videos).
+- **Permisos por sitio** (cámara, micrófono, ubicación, notificaciones) con una lista para revisarlos, y **ahorro de memoria** que suspende las pestañas sin uso.
+- **Tirador en forma de gota** pegado al borde izquierdo para abrir y cerrar el explorador de archivos.
+- **Instalador** (`Navegador-Setup.exe`) generado por GitHub Actions, sin permisos de administrador, y registro para aparecer en la lista de navegadores de Windows.
 - **Modo incógnito:** perfil temporal aislado que se borra al cerrar la última pestaña y no guarda historial.
 - **Descargas:** pestaña propia con progreso y un selector para elegir dónde guardar cada archivo. La lista se guarda entre sesiones.
 - **Escudos estilo Brave:** bloqueo de anuncios y rastreadores con listas EasyList, EasyPrivacy y EasyList Spanish (reglas de red y ocultamiento de elementos), HTTPS automático, limpieza de parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`...), señales GPC/DNT, prevención de seguimiento y apagado por sitio.
@@ -31,9 +36,9 @@
 | :---: | :---: |
 | <img src="docs/screenshots/incognito.png" alt="Modo incógnito"> | <img src="docs/screenshots/descargas.png" alt="Pestaña de descargas"> |
 
-| Explorador de archivos |
-| :---: |
-| <img src="docs/screenshots/archivos.png" alt="Explorador de archivos en el cajón lateral" width="700"> |
+| Página de inicio | Explorador de archivos |
+| :---: | :---: |
+| <img src="docs/screenshots/inicio.png" alt="Página de inicio"> | <img src="docs/screenshots/archivos.png" alt="Explorador de archivos en el cajón lateral"> |
 
 | Escudos por sitio | Configuración |
 | :---: | :---: |
@@ -41,7 +46,7 @@
 
 ## Atajos de teclado
 
-Funcionan cuando el foco está en la barra de herramientas (no dentro de la página).
+Funcionan con el foco en la barra y también dentro de la página.
 
 | Atajo | Acción |
 | --- | --- |
@@ -53,6 +58,14 @@ Funcionan cuando el foco está en la barra de herramientas (no dentro de la pág
 | `Ctrl` + `H` | Historial |
 | `Ctrl` + `J` | Descargas |
 | `Ctrl` + `E` | Explorador de archivos (cajón lateral) |
+| `Ctrl` + `F` | Buscar en la página |
+| `Ctrl` + `P` | Imprimir |
+| `Ctrl` + `Mayús` + `T` | Reabrir la última pestaña cerrada |
+| `Ctrl` + `Mayús` + `B` | Mostrar u ocultar la barra de marcadores |
+| `Ctrl` + `Tab` / `Ctrl` + `Mayús` + `Tab` | Pestaña siguiente / anterior |
+| `Ctrl` + `1` … `9` | Ir a la pestaña número 1 … 9 (la 9 es la última) |
+| `Ctrl` + `+` / `-` / `0` | Acercar, alejar y restablecer el zoom (también `Ctrl` + rueda) |
+| `F11` / `F12` | Pantalla completa / herramientas de desarrollo |
 | `Supr` / `F2` / `Enter` / `Retroceso` | En el explorador: borrar, renombrar, abrir, subir de carpeta |
 | `Ctrl` + `C` / `X` / `V` / `A` | En el explorador: copiar, mover, pegar, seleccionar todo |
 | `Ctrl` + `Mayús` + `N` | En el explorador: carpeta nueva |
@@ -85,6 +98,7 @@ El ejecutable queda en `publish/Navegador.exe`.
 ```
 Navegador/
 ├─ MainWindow.xaml(.cs)      Ventana, pestañas, barra de direcciones y escudos
+├─ MainWindow.Features.cs    Búsqueda, zoom, sesión, sugerencias, marcadores, permisos y más
 ├─ BrowserTab.cs             Modelo de pestaña (web o página interna)
 ├─ Models/                   Marcadores, historial y descargas
 ├─ Services/                 Adblock, perfiles, ajustes, historial, importador de Chrome
@@ -93,18 +107,22 @@ Navegador/
 ├─ Ui/ · Platform/           Pestañas, diálogos e íconos del explorador; envío a la Papelera
 └─ Assets/icon.ico           Ícono de la app
 scripts/screenshots.ps1      Toma las capturas de pantalla de la app
+installer/navegador.iss      Script del instalador (Inno Setup)
 docs/                        Ícono y capturas usados en este README
 .github/workflows/
 ├─ unzip.yml                 Descomprime el .zip subido a la raíz
-├─ build.yml                 Compila y sube el artefacto
+├─ build.yml                 Compila, sube el artefacto y crea el instalador
 └─ screenshots.yml           Genera las capturas y las guarda en docs/screenshots
 ```
 
 ## Limitaciones actuales
 
-- El bloqueo cubre reglas de red y ocultamiento de elementos de las listas de filtros. No incluye reglas con expresiones regulares ni filtros avanzados (por ejemplo, los anuncios de video de YouTube).
-- Del importador de Chrome faltan contraseñas, cookies y extensiones: Chrome las cifra con una clave atada a su propio programa y no hay una forma legítima de leerlas desde otra app.
-- No hay sincronización de cuenta de Google: Google no ofrece una API pública para Chrome Sync.
+- No hay extensiones: WebView2 no instala las de la Chrome Web Store.
+- No hay gestor de contraseñas propio ni sincronización entre dispositivos (Google no ofrece una API pública para Chrome Sync).
+- El bloqueo cubre reglas de red y ocultamiento de elementos de las listas de filtros; no incluye reglas con expresiones regulares ni filtros avanzados (por ejemplo, los anuncios de video de YouTube).
+- Del importador de Chrome faltan contraseñas, cookies y extensiones: Chrome las cifra con una clave atada a su propio programa.
+- Una segunda ventana no reutiliza la primera: cada vez que se abre un enlace desde otra app se abre una ventana nueva.
+- No hay actualizaciones automáticas: hay que instalar la versión nueva encima.
 
 ## Capturas automáticas
 

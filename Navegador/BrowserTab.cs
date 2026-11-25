@@ -15,6 +15,11 @@ public sealed class BrowserTab
 
     // Estado de las páginas web
     public bool Loading { get; set; }
+    public string Title { get; set; } = "";
+    public bool Playing { get; set; }
+    public bool Suspended { get; set; }
+    public DateTime? LastActive { get; set; }
+    public string Nonce { get; set; } = "";
     public int Blocked { get; set; }
     public string? PageHost { get; set; }
     public string? UpgradedHttps { get; set; }

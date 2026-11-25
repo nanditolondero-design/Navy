@@ -11,6 +11,11 @@
             <TextBlock Text="General" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,8,0,0"/>
             <ComboBox x:Name="SearchBox" Header="Buscador predeterminado" MinWidth="260" SelectionChanged="Setting_SelectionChanged"/>
 
+            <ToggleSwitch x:Name="RestoreSwitch" Header="Al abrir, restaurar las pestañas de la última vez" OnContent="Sí" OffContent="No" Toggled="Setting_Toggled"/>
+            <ToggleSwitch x:Name="StartPageSwitch" Header="Página de inicio con buscador y favoritos en las pestañas nuevas" OnContent="Sí" OffContent="No" Toggled="Setting_Toggled"/>
+            <ToggleSwitch x:Name="BarSwitch" Header="Mostrar la barra de marcadores" OnContent="Sí" OffContent="No" Toggled="Setting_Toggled"/>
+            <ToggleSwitch x:Name="SaverSwitch" Header="Ahorro de memoria: suspender las pestañas que no usás hace 5 minutos" OnContent="Activado" OffContent="Desactivado" Toggled="Setting_Toggled"/>
+
             <TextBlock Text="Escudos (privacidad)" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0"/>
             <ToggleSwitch x:Name="AdblockSwitch" Header="Bloquear anuncios y rastreadores" OnContent="Activado" OffContent="Desactivado" Toggled="Setting_Toggled"/>
             <ToggleSwitch x:Name="HttpsSwitch" Header="Actualizar sitios a HTTPS cuando se pueda" OnContent="Activado" OffContent="Desactivado" Toggled="Setting_Toggled"/>
@@ -37,6 +42,29 @@
             <TextBlock x:Name="ImportResult" TextWrapping="Wrap"/>
             <TextBlock TextWrapping="Wrap" Opacity="0.7"
                        Text="Cerrá Chrome antes de importar. Las contraseñas, cookies y extensiones no se pueden importar todavía."/>
+
+            <TextBlock Text="Permisos de sitios" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0"/>
+            <TextBlock x:Name="PermEmpty" TextWrapping="Wrap" Opacity="0.7"
+                       Text="Todavía no guardaste ningún permiso. Cuando un sitio pida cámara, micrófono, ubicación o notificaciones vas a poder recordar tu decisión."/>
+            <ListView x:Name="PermList" SelectionMode="None" MaxHeight="260">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid ColumnSpacing="12" Padding="0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            <Button Grid.Column="1" Content="Quitar" Click="PermRemove_Click"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <TextBlock Text="Navegador predeterminado" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0"/>
+            <Button Content="Registrar y abrir la configuración de Windows" Click="DefaultBrowser_Click"/>
+            <TextBlock x:Name="DefaultResult" TextWrapping="Wrap" Opacity="0.7"
+                       Text="Windows no deja que una app se ponga sola como predeterminada: se registra en la lista y vos lo elegís ahí."/>
 
             <TextBlock Text="Datos de navegación" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,0"/>
             <StackPanel Orientation="Horizontal" Spacing="12">

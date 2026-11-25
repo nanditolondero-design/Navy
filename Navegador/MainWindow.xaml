@@ -19,6 +19,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -31,6 +33,14 @@
             <KeyboardAccelerator Key="H" Modifiers="Control" Invoked="HistoryAccel_Invoked"/>
             <KeyboardAccelerator Key="J" Modifiers="Control" Invoked="DownloadsAccel_Invoked"/>
             <KeyboardAccelerator Key="E" Modifiers="Control" Invoked="FilesAccel_Invoked"/>
+            <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="FindAccel_Invoked"/>
+            <KeyboardAccelerator Key="P" Modifiers="Control" Invoked="PrintAccel_Invoked"/>
+            <KeyboardAccelerator Key="T" Modifiers="Control,Shift" Invoked="ReopenAccel_Invoked"/>
+            <KeyboardAccelerator Key="B" Modifiers="Control,Shift" Invoked="BookmarksBarAccel_Invoked"/>
+            <KeyboardAccelerator Key="Tab" Modifiers="Control" Invoked="NextTabAccel_Invoked"/>
+            <KeyboardAccelerator Key="Tab" Modifiers="Control,Shift" Invoked="PrevTabAccel_Invoked"/>
+            <KeyboardAccelerator Key="F11" Invoked="FullscreenAccel_Invoked"/>
+            <KeyboardAccelerator Key="F12" Invoked="DevToolsAccel_Invoked"/>
             <KeyboardAccelerator Key="F5" Invoked="ReloadAccel_Invoked"/>
         </Grid.KeyboardAccelerators>
 
@@ -96,6 +106,7 @@
                              TextAlignment="Center" MinHeight="32" Padding="4,5"
                              BorderThickness="0" Background="Transparent" VerticalAlignment="Center"
                              KeyDown="Address_KeyDown"
+                             TextChanged="Address_TextChanged"
                              GotFocus="Address_GotFocus"
                              LostFocus="Address_LostFocus">
                         <TextBox.Resources>
@@ -107,6 +118,38 @@
                             <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="Transparent"/>
                         </TextBox.Resources>
                     </TextBox>
+
+                    <Popup x:Name="SuggestPopup" Grid.Column="1" IsOpen="False" IsLightDismissEnabled="False">
+                        <Border x:Name="SuggestBox" CornerRadius="10" Padding="4" BorderThickness="1"
+                                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                PointerEntered="Suggest_PointerEntered" PointerExited="Suggest_PointerExited">
+                            <ListView x:Name="SuggestList" IsItemClickEnabled="True" SelectionMode="Single"
+                                      AllowFocusOnInteraction="False" ItemClick="Suggest_ItemClick">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="AllowFocusOnInteraction" Value="False"/>
+                                        <Setter Property="MinHeight" Value="44"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnSpacing="10" Padding="2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Glyph="{Binding Glyph}" FontSize="14" Opacity="0.7" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Subtitle}" FontSize="11" Opacity="0.55" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Border>
+                    </Popup>
 
                     <Button x:Name="StarBtn" Grid.Column="2" Style="{StaticResource ToolBtn}" Padding="7,5"
                             Click="Star_Click" ToolTipService.ToolTip="Agregar a marcadores (Ctrl+D)">
@@ -139,14 +182,25 @@
                 <Button Style="{StaticResource ToolBtn}" ToolTipService.ToolTip="Menú">
                     <FontIcon Glyph="&#xE712;" FontSize="15"/>
                     <Button.Flyout>
-                        <MenuFlyout>
+                        <MenuFlyout Opening="MainMenu_Opening">
                             <MenuFlyoutItem Text="Nueva pestaña" Click="NewTab_Click"/>
                             <MenuFlyoutItem Text="Nueva pestaña de incógnito" Click="NewIncognito_Click"/>
+                            <MenuFlyoutItem Text="Reabrir pestaña cerrada" Click="Reopen_Click"/>
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Explorador de archivos" Click="Files_Click"/>
                             <MenuFlyoutItem Text="Descargas" Click="DownloadsBtn_Click"/>
                             <MenuFlyoutItem Text="Historial" Click="History_Click"/>
                             <MenuFlyoutItem Text="Marcadores" Click="Bookmarks_Click"/>
+                            <MenuFlyoutSeparator/>
+                            <MenuFlyoutItem Text="Buscar en la página" Click="Find_Click"/>
+                            <MenuFlyoutItem Text="Acercar" Click="ZoomIn_Click"/>
+                            <MenuFlyoutItem Text="Alejar" Click="ZoomOut_Click"/>
+                            <MenuFlyoutItem x:Name="ZoomResetItem" Text="Zoom: 100% (restablecer)" Click="ZoomReset_Click"/>
+                            <MenuFlyoutItem Text="Imprimir…" Click="Print_Click"/>
+                            <MenuFlyoutItem Text="Guardar como PDF…" Click="SavePdf_Click"/>
+                            <MenuFlyoutItem Text="Pantalla completa" Click="Fullscreen_Click"/>
+                            <MenuFlyoutItem Text="Herramientas de desarrollo" Click="DevTools_Click"/>
+                            <ToggleMenuFlyoutItem x:Name="BookmarksBarToggle" Text="Mostrar barra de marcadores" Click="BookmarksBarToggle_Click"/>
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Configuración" Click="Settings_Click"/>
                         </MenuFlyout>
@@ -160,14 +214,51 @@
                          MinHeight="2" Height="2"/>
         </Grid>
 
-        <Grid Grid.Row="2">
+        <!-- Barra de marcadores -->
+        <ScrollViewer x:Name="BookmarksBar" Grid.Row="2" Visibility="Collapsed"
+                      HorizontalScrollBarVisibility="Hidden" HorizontalScrollMode="Auto"
+                      VerticalScrollBarVisibility="Disabled" VerticalScrollMode="Disabled" Padding="12,0,12,6">
+            <StackPanel x:Name="BookmarksStrip" Orientation="Horizontal" Spacing="4"/>
+        </ScrollViewer>
+
+        <!-- Buscar en la página (Ctrl+F) -->
+        <StackPanel x:Name="FindBar" Grid.Row="3" Orientation="Horizontal" Spacing="6"
+                    HorizontalAlignment="Right" Margin="0,0,12,6" Visibility="Collapsed">
+            <TextBox x:Name="FindBox" Width="260" MinHeight="32" PlaceholderText="Buscar en la página"
+                     TextChanged="FindBox_TextChanged" KeyDown="FindBox_KeyDown"/>
+            <TextBlock x:Name="FindCount" VerticalAlignment="Center" Opacity="0.7" MinWidth="90"/>
+            <Button Style="{StaticResource ToolBtn}" Click="FindPrev_Click" ToolTipService.ToolTip="Anterior (Mayús+Enter)">
+                <FontIcon Glyph="&#xE70E;" FontSize="14"/>
+            </Button>
+            <Button Style="{StaticResource ToolBtn}" Click="FindNext_Click" ToolTipService.ToolTip="Siguiente (Enter)">
+                <FontIcon Glyph="&#xE70D;" FontSize="14"/>
+            </Button>
+            <Button Style="{StaticResource ToolBtn}" Click="FindClose_Click" ToolTipService.ToolTip="Cerrar (Esc)">
+                <FontIcon Glyph="&#xE711;" FontSize="14"/>
+            </Button>
+        </StackPanel>
+
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="DrawerColumn" Width="0"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <views:FileExplorerPanel x:Name="Explorer" Grid.Column="0" Visibility="Collapsed"/>
-            <Grid x:Name="ContentHost" Grid.Column="1"/>
+
+            <!-- Tirador en forma de gota, pegado al borde izquierdo (o al borde del cajón cuando está abierto).
+                 Tiene su propia columna: la página web no se puede tapar con elementos de la ventana. -->
+            <Grid x:Name="DropHandle" Grid.Column="1" Width="26" Height="72"
+                  HorizontalAlignment="Left" VerticalAlignment="Center" Background="Transparent" Opacity="0.85"
+                  Tapped="DropHandle_Tapped" PointerEntered="DropHandle_PointerEntered" PointerExited="DropHandle_PointerExited"
+                  ToolTipService.ToolTip="Explorador de archivos (Ctrl+E)">
+                <Path Fill="#FF705CFF" Data="M0,0 C14,0 26,16 26,36 C26,56 14,72 0,72 Z"/>
+                <FontIcon x:Name="DropHandleIcon" Glyph="&#xE76C;" FontSize="12" Foreground="White"
+                          HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+            </Grid>
+
+            <Grid x:Name="ContentHost" Grid.Column="2"/>
         </Grid>
     </Grid>
 </Window>

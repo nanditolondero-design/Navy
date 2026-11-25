@@ -57,6 +57,7 @@ public sealed partial class MainWindow : Window
         _ = _adblock.UpdateFromRemoteAsync();
         _ = _adblock.UpdateFilterListsAsync();
         _bookmarks.Changed += UpdateStar;
+        InitFeatures();
 
         Explorer.OpenInBrowser = path => { _ = AddTabAsync(false, new Uri(path).AbsoluteUri); };
         Explorer.CloseRequested += () => SetDrawer(false);
@@ -90,7 +91,7 @@ public sealed partial class MainWindow : Window
             }
 
             string? startUrl = cli.TryGetValue("url", out var cliUrl) && cliUrl.Length > 0 ? cliUrl : null;
-            await AddTabAsync(cli.ContainsKey("incognito"), startUrl);
+            await StartTabsAsync(cli, startUrl, BareArg());
 
             if (cli.TryGetValue("open", out var open))
             {
@@ -140,6 +141,7 @@ public sealed partial class MainWindow : Window
         var item = new TabViewItem();
         var tab = new BrowserTab { Item = item, Content = view, View = view, Incognito = incognito };
         SetTitle(tab, incognito ? "Incógnito" : "Nueva pestaña");
+        AttachTabMenu(tab);
 
         _tabs.Add(tab);
         ContentHost.Children.Add(view);
@@ -158,7 +160,8 @@ public sealed partial class MainWindow : Window
         }
 
         ConfigureTab(tab);
-        view.CoreWebView2.Navigate(url ?? HomeUrl);
+        ConfigureFeatures(tab);
+        NavigateInitial(tab, url);
     }
 
     private void OpenInternalTab(TabKind kind)
@@ -192,6 +195,7 @@ public sealed partial class MainWindow : Window
             IconSource = new FontIconSource { Glyph = glyph }
         };
         var tab = new BrowserTab { Item = item, Content = page, Kind = kind };
+        AttachTabMenu(tab);
 
         _tabs.Add(tab);
         ContentHost.Children.Add(page);
@@ -257,6 +261,7 @@ public sealed partial class MainWindow : Window
     private void ApplySettings()
     {
         _adblock.Enabled = _settings.AdblockEnabled;
+        RefreshBookmarksBar();
         foreach (var t in _tabs)
         {
             var core = t.View?.CoreWebView2;
@@ -510,8 +515,8 @@ public sealed partial class MainWindow : Window
 
     private void SetTitle(BrowserTab tab, string title)
     {
-        if (title.Length > 40) title = title[..40] + "…";
-        tab.Item.Header = tab.Incognito ? "🕶 " + title : title;
+        tab.Title = title;
+        RefreshHeader(tab);
     }
 
     private static async Task UpdateFaviconAsync(BrowserTab tab)
@@ -531,6 +536,7 @@ public sealed partial class MainWindow : Window
 
     private void CloseTab(BrowserTab tab)
     {
+        RememberClosed(tab);
         Tabs.TabItems.Remove(tab.Item);
         _tabs.Remove(tab);
         ContentHost.Children.Remove(tab.Content);
@@ -540,6 +546,7 @@ public sealed partial class MainWindow : Window
         if (tab.Incognito && !_tabs.Any(t => t.Incognito))
             _profiles.DisposeIncognito();
 
+        SaveSessionSoon();
         if (_tabs.Count == 0) Close();
     }
 
@@ -567,6 +574,7 @@ public sealed partial class MainWindow : Window
         UpdateStar();
 
         if (cur.Content is IRefreshable refreshable) refreshable.Refresh();
+        OnSelectionFeatures(cur);
     }
 
     private void ApplyIncognitoLook(bool incognito)
@@ -602,6 +610,7 @@ public sealed partial class MainWindow : Window
     // Como Safari: sin foco se muestra solo el dominio; al enfocar, la dirección completa
     private void SetAddress(string? url)
     {
+        if (url == "about:blank") url = null;
         _addressUrl = url ?? "";
         if (!_addressFocused) ShowAddressDisplay();
 
@@ -630,26 +639,13 @@ public sealed partial class MainWindow : Window
         _addressFocused = false;
         AddressBox.TextAlignment = TextAlignment.Center;
         ShowAddressDisplay();
+        if (!_overSuggest) HideSuggestions();
     }
 
     private void UpdateLoading() =>
         LoadBar.Visibility = CurrentTab?.Loading == true ? Visibility.Visible : Visibility.Collapsed;
 
-    private void Address_KeyDown(object sender, KeyRoutedEventArgs e)
-    {
-        if (e.Key != VirtualKey.Enter) return;
-        e.Handled = true;
-
-        var core = CurrentTab?.View?.CoreWebView2;
-        if (core is null)
-        {
-            // Estando en una página interna, la dirección se abre en una pestaña nueva
-            _ = AddTabAsync(false, ToUrl(AddressBox.Text));
-            return;
-        }
-        core.Navigate(ToUrl(AddressBox.Text));
-        CurrentTab?.View?.Focus(FocusState.Programmatic);
-    }
+    private void Address_KeyDown(object sender, KeyRoutedEventArgs e) => HandleAddressKey(e);
 
     private string ToUrl(string input)
     {
@@ -704,6 +700,7 @@ public sealed partial class MainWindow : Window
         _drawerOpen = open;
         Explorer.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
         DrawerColumn.Width = new GridLength(open ? 540 : 0);
+        DropHandleIcon.Glyph = open ? "\uE76B" : "\uE76C";
         if (open) Explorer.Open(path);
     }
 

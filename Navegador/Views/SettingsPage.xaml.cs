@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Navegador.Models;
 using Navegador.Services;
 using Windows.Storage.Pickers;
 
@@ -21,6 +22,12 @@ public sealed partial class SettingsPage : UserControl
 
         TrackingBox.ItemsSource = new[] { "Desactivada", "Básica", "Equilibrada", "Estricta" };
         TrackingBox.SelectedIndex = Math.Clamp(_cfg.TrackingPrevention, 0, 3);
+
+        RestoreSwitch.IsOn = _cfg.RestoreSession;
+        StartPageSwitch.IsOn = _cfg.StartPage;
+        BarSwitch.IsOn = _cfg.ShowBookmarksBar;
+        SaverSwitch.IsOn = _cfg.MemorySaver;
+        LoadPermissions();
 
         AdblockSwitch.IsOn = _cfg.AdblockEnabled;
         HttpsSwitch.IsOn = _cfg.HttpsUpgrade;
@@ -48,6 +55,10 @@ public sealed partial class SettingsPage : UserControl
     {
         if (_loading) return;
         _cfg.SearchEngine = SearchBox.SelectedItem as string ?? "Google";
+        _cfg.RestoreSession = RestoreSwitch.IsOn;
+        _cfg.StartPage = StartPageSwitch.IsOn;
+        _cfg.ShowBookmarksBar = BarSwitch.IsOn;
+        _cfg.MemorySaver = SaverSwitch.IsOn;
         _cfg.AdblockEnabled = AdblockSwitch.IsOn;
         _cfg.HttpsUpgrade = HttpsSwitch.IsOn;
         _cfg.StripTrackingParams = StripSwitch.IsOn;
@@ -56,6 +67,43 @@ public sealed partial class SettingsPage : UserControl
         _cfg.AskDownloadLocation = AskSwitch.IsOn;
         _cfg.Save();
         _services.SettingsChanged();
+    }
+
+    private void LoadPermissions()
+    {
+        var items = _cfg.SitePermissions
+            .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(kv =>
+            {
+                var parts = kv.Key.Split('|');
+                var host = parts[0];
+                var kind = parts.Length > 1 ? parts[1] : "";
+                return new PermissionEntry
+                {
+                    Key = kv.Key,
+                    Text = $"{host} · {PermissionInfo.Label(kind)}: {(kv.Value == "allow" ? "permitido" : "bloqueado")}"
+                };
+            })
+            .ToList();
+        PermList.ItemsSource = items;
+        PermEmpty.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void PermRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not PermissionEntry entry) return;
+        _cfg.SitePermissions.Remove(entry.Key);
+        _cfg.Save();
+        LoadPermissions();
+    }
+
+    private void DefaultBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        var ok = DefaultBrowser.Register();
+        DefaultResult.Text = ok
+            ? "Listo: Navegador ya figura en la lista de Windows. En la pantalla que se abrió, elegilo como navegador predeterminado."
+            : "No se pudo registrar la app en Windows.";
+        _ = Windows.System.Launcher.LaunchUriAsync(new Uri("ms-settings:defaultapps"));
     }
 
     private void Setting_Toggled(object sender, RoutedEventArgs e) => Apply();
