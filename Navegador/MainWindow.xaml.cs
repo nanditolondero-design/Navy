@@ -28,6 +28,7 @@ public sealed partial class MainWindow : Window
     private bool _started;
     private bool _updatingShield;
     private bool _addressFocused;
+    private bool _drawerOpen;
     private string _addressUrl = "";
 
     private BrowserTab? CurrentTab =>
@@ -56,6 +57,9 @@ public sealed partial class MainWindow : Window
         _ = _adblock.UpdateFromRemoteAsync();
         _ = _adblock.UpdateFilterListsAsync();
         _bookmarks.Changed += UpdateStar;
+
+        Explorer.OpenInBrowser = path => { _ = AddTabAsync(false, new Uri(path).AbsoluteUri); };
+        Explorer.CloseRequested += () => SetDrawer(false);
 
         Closed += (_, _) =>
         {
@@ -100,6 +104,9 @@ public sealed partial class MainWindow : Window
                 };
                 if (kind is { } k) OpenInternalTab(k);
             }
+
+            if (cli.TryGetValue("drawer", out var drawerPath))
+                SetDrawer(true, drawerPath.Length > 0 ? drawerPath : null);
 
             if (cli.ContainsKey("demo-shields"))
             {
@@ -691,6 +698,17 @@ public sealed partial class MainWindow : Window
         tab.View?.CoreWebView2?.Reload();
     }
 
+    // Cajón lateral con el explorador de archivos
+    private void SetDrawer(bool open, string? path = null)
+    {
+        _drawerOpen = open;
+        Explorer.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
+        DrawerColumn.Width = new GridLength(open ? 540 : 0);
+        if (open) Explorer.Open(path);
+    }
+
+    private void Files_Click(object sender, RoutedEventArgs e) => SetDrawer(!_drawerOpen);
+
     // Menú y botones
     private void NewTab_Click(object sender, RoutedEventArgs e) => _ = AddTabAsync(false, null);
     private void NewIncognito_Click(object sender, RoutedEventArgs e) => _ = AddTabAsync(true, null);
@@ -707,5 +725,6 @@ public sealed partial class MainWindow : Window
     private void BookmarkAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; Star_Click(s, new RoutedEventArgs()); }
     private void HistoryAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; OpenInternalTab(TabKind.History); }
     private void DownloadsAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; OpenInternalTab(TabKind.Downloads); }
+    private void FilesAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; SetDrawer(!_drawerOpen); }
     private void ReloadAccel_Invoked(KeyboardAccelerator s, KeyboardAcceleratorInvokedEventArgs a) { a.Handled = true; CurrentTab?.View?.CoreWebView2?.Reload(); }
 }

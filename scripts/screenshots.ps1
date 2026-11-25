@@ -65,6 +65,26 @@ New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
 @{ AskDownloadLocation = $false; DownloadFolder = $downloads } | ConvertTo-Json |
     Set-Content -Path (Join-Path $settingsDir 'settings.json') -Encoding UTF8
 
+# Carpeta de ejemplo para el explorador de archivos
+$files = Join-Path $env:RUNNER_TEMP 'MisArchivos'
+New-Item -ItemType Directory -Force -Path (Join-Path $files 'Documentos'), (Join-Path $files 'Imagenes'), (Join-Path $files 'Proyectos') | Out-Null
+$rnd = New-Object System.Random
+foreach ($f in @(
+    @('Informe-anual.docx', 184320), @('Presupuesto.xlsx', 96256), @('Presentacion.pptx', 2411724),
+    @('notas.txt', 1840), @('cancion.mp3', 4718592), @('video-vacaciones.mp4', 52428800)
+)) {
+    $bytes = New-Object byte[] $f[1]
+    $rnd.NextBytes($bytes)
+    [IO.File]::WriteAllBytes((Join-Path $files $f[0]), $bytes)
+}
+Compress-Archive -Path (Join-Path $files 'notas.txt'), (Join-Path $files 'Informe-anual.docx') -DestinationPath (Join-Path $files 'respaldo.zip') -Force
+$bmp = New-Object System.Drawing.Bitmap 320, 200
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$g.Clear([System.Drawing.Color]::SteelBlue)
+$g.Dispose()
+$bmp.Save((Join-Path $files 'foto-playa.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$bmp.Dispose()
+
 $server = Start-Process python -ArgumentList '-m', 'http.server', '8000', '--bind', '127.0.0.1', '--directory', $demo `
     -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 2
@@ -126,6 +146,7 @@ Capture 'principal'     @($size, '--url=https://es.wikipedia.org/wiki/Navegador_
 Capture 'incognito'     @($size, '--incognito', '--url=https://duckduckgo.com') 22
 Capture 'descargas'     @($size, '--url=http://localhost:8000/ejemplo-descarga.zip') 16
 Capture 'escudos'       @($size, '--url=http://localhost:8000/escudos.html', '--demo-shields') 22
+Capture 'archivos'      @($size, '--url=http://localhost:8000/escudos.html', "--drawer=$files") 20
 Capture 'configuracion' @($size, '--open=settings') 14
 
 Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue

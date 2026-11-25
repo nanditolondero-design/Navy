@@ -14,6 +14,12 @@ public sealed class AppSettings
     public int TrackingPrevention { get; set; } = 2;       // 0 ninguna, 1 básica, 2 equilibrada, 3 estricta
     public List<string> ShieldsOffHosts { get; set; } = new();
 
+    // Explorador de archivos (cajón lateral)
+    public string ExplorerPath { get; set; } = "";
+    public bool ExplorerShowHidden { get; set; }
+    public string ExplorerSort { get; set; } = "Name";
+    public bool ExplorerAscending { get; set; } = true;
+
     // Descargas
     public bool AskDownloadLocation { get; set; } = true;
     public string DownloadFolder { get; set; } = DefaultDownloadFolder;

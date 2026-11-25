@@ -26,5 +26,7 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250108002" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <!-- Ver .rar por dentro (solo lectura), como en AlternAIs -->
+    <PackageReference Include="SharpCompress" Version="0.38.0" />
   </ItemGroup>
 </Project>

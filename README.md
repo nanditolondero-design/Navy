@@ -20,6 +20,7 @@
 - **Modo incógnito:** perfil temporal aislado que se borra al cerrar la última pestaña y no guarda historial.
 - **Descargas:** pestaña propia con progreso y un selector para elegir dónde guardar cada archivo. La lista se guarda entre sesiones.
 - **Escudos estilo Brave:** bloqueo de anuncios y rastreadores con listas EasyList, EasyPrivacy y EasyList Spanish (reglas de red y ocultamiento de elementos), HTTPS automático, limpieza de parámetros de seguimiento (`utm_*`, `fbclid`, `gclid`...), señales GPC/DNT, prevención de seguimiento y apagado por sitio.
+- **Explorador de archivos en un cajón lateral** (Ctrl+E), portado de AlternAIs: pestañas propias dentro del explorador, lugares rápidos y unidades, miniaturas de imágenes, selección múltiple con casillas, copiar, mover y pegar, renombrar, carpeta nueva, borrar a la Papelera de reciclaje, y ver por dentro, extraer y modificar `.zip` (los `.rar` se ven y se extraen). Los archivos que el navegador sabe mostrar se pueden abrir en una pestaña.
 - **Historial y marcadores** guardados en local.
 - **Importar desde Google Chrome:** marcadores e historial.
 - **Buscador a elección:** Google, DuckDuckGo, Brave Search o Bing.
@@ -29,6 +30,10 @@
 | Modo incógnito | Descargas |
 | :---: | :---: |
 | <img src="docs/screenshots/incognito.png" alt="Modo incógnito"> | <img src="docs/screenshots/descargas.png" alt="Pestaña de descargas"> |
+
+| Explorador de archivos |
+| :---: |
+| <img src="docs/screenshots/archivos.png" alt="Explorador de archivos en el cajón lateral" width="700"> |
 
 | Escudos por sitio | Configuración |
 | :---: | :---: |
@@ -47,6 +52,10 @@ Funcionan cuando el foco está en la barra de herramientas (no dentro de la pág
 | `Ctrl` + `D` | Agregar o quitar marcador |
 | `Ctrl` + `H` | Historial |
 | `Ctrl` + `J` | Descargas |
+| `Ctrl` + `E` | Explorador de archivos (cajón lateral) |
+| `Supr` / `F2` / `Enter` / `Retroceso` | En el explorador: borrar, renombrar, abrir, subir de carpeta |
+| `Ctrl` + `C` / `X` / `V` / `A` | En el explorador: copiar, mover, pegar, seleccionar todo |
+| `Ctrl` + `Mayús` + `N` | En el explorador: carpeta nueva |
 | `F5` | Recargar |
 
 ## Descargar y compilar
@@ -79,7 +88,9 @@ Navegador/
 ├─ BrowserTab.cs             Modelo de pestaña (web o página interna)
 ├─ Models/                   Marcadores, historial y descargas
 ├─ Services/                 Adblock, perfiles, ajustes, historial, importador de Chrome
-├─ Views/                    Descargas, historial, marcadores y configuración
+├─ Views/                    Descargas, historial, marcadores, configuración y el cajón del explorador
+├─ Files/                    Operaciones de archivos y comprimidos (copiar, mover, extraer .zip/.rar)
+├─ Ui/ · Platform/           Pestañas, diálogos e íconos del explorador; envío a la Papelera
 └─ Assets/icon.ico           Ícono de la app
 scripts/screenshots.ps1      Toma las capturas de pantalla de la app
 docs/                        Ícono y capturas usados en este README
@@ -114,4 +125,5 @@ Argumentos de línea de comandos de la app (sirven para las capturas, pero se pu
 | `--incognito` | La primera pestaña es de incógnito |
 | `--open=settings` | Abre una página interna: `settings`, `downloads`, `history` o `bookmarks` |
 | `--size=1100x720` | Tamaño de la ventana en píxeles |
+| `--drawer=ruta` | Abre el cajón del explorador de archivos en esa carpeta (sin ruta, en Descargas) |
 | `--demo-shields` | Abre el panel de escudos a los pocos segundos |
