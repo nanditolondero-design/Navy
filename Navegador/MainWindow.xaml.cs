@@ -45,6 +45,8 @@ public sealed partial class MainWindow : Window
         {
             History = _history,
             Bookmarks = _bookmarks,
+            Vault = _vault,
+            Hello = _hello,
             Owner = this,
             OpenUrl = url => { _ = AddTabAsync(false, url); },
             SettingsChanged = ApplySettings,
@@ -100,6 +102,7 @@ public sealed partial class MainWindow : Window
                     "settings" => TabKind.Settings,
                     "history" => TabKind.History,
                     "bookmarks" => TabKind.Bookmarks,
+                    "passwords" => TabKind.Passwords,
                     "downloads" => TabKind.Downloads,
                     _ => null
                 };
@@ -178,6 +181,7 @@ public sealed partial class MainWindow : Window
             TabKind.Downloads => new DownloadsPage(),
             TabKind.History => new HistoryPage(_services),
             TabKind.Bookmarks => new BookmarksPage(_services),
+            TabKind.Passwords => new PasswordsPage(_services),
             _ => new SettingsPage(_services)
         };
 
@@ -186,6 +190,7 @@ public sealed partial class MainWindow : Window
             TabKind.Downloads => ("Descargas", "\uE896"),
             TabKind.History => ("Historial", "\uE81C"),
             TabKind.Bookmarks => ("Marcadores", "\uE734"),
+            TabKind.Passwords => ("Contraseñas", "\uE192"),
             _ => ("Configuración", "\uE713")
         };
 
@@ -600,6 +605,7 @@ public sealed partial class MainWindow : Window
         var url = core?.Source;
         var isWeb = HostOf(url) is not null;
         StarBtn.IsEnabled = isWeb;
+        KeyBtn.Visibility = isWeb ? Visibility.Visible : Visibility.Collapsed;
         StarIcon.Glyph = isWeb && _bookmarks.Contains(url) ? "\uE735" : "\uE734";
     }
 

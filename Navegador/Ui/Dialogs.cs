@@ -53,6 +53,20 @@ internal static class Dialogs
         return await Show(d) == ContentDialogResult.Primary;
     }
 
+    /// <summary>Pide una contraseña (con el campo oculto). Devuelve null si se cancela.</summary>
+    public static async Task<string?> Password(string title, string text, string okText)
+    {
+        var box = new PasswordBox { PlaceholderText = "Contraseña maestra" };
+        var panel = new StackPanel { Spacing = 10 };
+        panel.Children.Add(new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(box);
+
+        var d = Make(title, okText);
+        d.Content = panel;
+        d.Opened += (_, _) => box.Focus(FocusState.Programmatic);
+        return await Show(d) == ContentDialogResult.Primary ? box.Password : null;
+    }
+
     /// <summary>Un texto de una línea. Devuelve null si se cancela.</summary>
     public static async Task<string?> Text(string title, string initial, string okText)
     {

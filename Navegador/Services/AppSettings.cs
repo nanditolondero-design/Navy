@@ -21,6 +21,9 @@ public sealed class AppSettings
     public bool MemorySaver { get; set; } = true;
     public Dictionary<string, double> SiteZoom { get; set; } = new();
 
+    // Sitios donde el usuario eligió «Nunca» al ofrecer guardar una contraseña
+    public List<string> NeverSaveHosts { get; set; } = new();
+
     // Permisos recordados por sitio: "host|Microphone" -> "allow" | "deny"
     public Dictionary<string, string> SitePermissions { get; set; } = new();
 

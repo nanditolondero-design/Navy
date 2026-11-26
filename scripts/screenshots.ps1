@@ -149,6 +149,7 @@ Capture 'escudos'       @($size, '--url=http://localhost:8000/escudos.html', '--
 Capture 'archivos'      @($size, '--url=http://localhost:8000/escudos.html', "--drawer=$files") 20
 Capture 'configuracion' @($size, '--open=settings') 14
 
+Capture 'contrasenas'  @($size, '--open=passwords') 14
 # Página de inicio: va al final para que ya haya historial de las capturas anteriores
 Capture 'inicio' @($size) 14
 

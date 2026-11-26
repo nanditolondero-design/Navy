@@ -96,6 +96,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <FontIcon x:Name="LockIcon" Grid.Column="0" Glyph="&#xE72E;" FontSize="12" Opacity="0.6"
@@ -151,7 +152,12 @@
                         </Border>
                     </Popup>
 
-                    <Button x:Name="StarBtn" Grid.Column="2" Style="{StaticResource ToolBtn}" Padding="7,5"
+                    <Button x:Name="KeyBtn" Grid.Column="2" Style="{StaticResource ToolBtn}" Padding="7,5" Visibility="Collapsed"
+                            Click="KeyBtn_Click" ToolTipService.ToolTip="Contraseñas guardadas">
+                        <FontIcon Glyph="&#xE192;" FontSize="14"/>
+                    </Button>
+
+                    <Button x:Name="StarBtn" Grid.Column="3" Style="{StaticResource ToolBtn}" Padding="7,5"
                             Click="Star_Click" ToolTipService.ToolTip="Agregar a marcadores (Ctrl+D)">
                         <FontIcon x:Name="StarIcon" Glyph="&#xE734;" FontSize="14"/>
                     </Button>
@@ -191,6 +197,7 @@
                             <MenuFlyoutItem Text="Descargas" Click="DownloadsBtn_Click"/>
                             <MenuFlyoutItem Text="Historial" Click="History_Click"/>
                             <MenuFlyoutItem Text="Marcadores" Click="Bookmarks_Click"/>
+                            <MenuFlyoutItem Text="Contraseñas" Click="Passwords_Click"/>
                             <MenuFlyoutSeparator/>
                             <MenuFlyoutItem Text="Buscar en la página" Click="Find_Click"/>
                             <MenuFlyoutItem Text="Acercar" Click="ZoomIn_Click"/>
@@ -237,6 +244,24 @@
                 <FontIcon Glyph="&#xE711;" FontSize="14"/>
             </Button>
         </StackPanel>
+
+        <!-- Contraseña sugerida para formularios de registro -->
+        <Popup x:Name="NewPwPopup" Grid.RowSpan="5" HorizontalAlignment="Left" VerticalAlignment="Top"
+               IsOpen="False" IsLightDismissEnabled="True">
+            <Border CornerRadius="10" Padding="12" BorderThickness="1" Width="300"
+                    Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                    BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="🔑 Contraseña segura sugerida" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="NewPwText" FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Content="Usar" Style="{StaticResource AccentButtonStyle}" Click="NewPwUse_Click"/>
+                        <Button Content="Otra" Click="NewPwAnother_Click"/>
+                        <Button Content="No, gracias" Click="NewPwNo_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Popup>
 
         <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>

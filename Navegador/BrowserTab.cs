@@ -3,7 +3,10 @@ using Microsoft.UI.Xaml.Controls;
 
 namespace Navegador;
 
-public enum TabKind { Web, Downloads, History, Bookmarks, Settings }
+public enum TabKind { Web, Downloads, History, Bookmarks, Settings, Passwords }
+
+/// <summary>Usuario y contraseña que se acaban de escribir en un formulario, a la espera de ofrecer guardarlos.</summary>
+public sealed record PendingCred(string Host, string User, string Pass, DateTime At);
 
 public sealed class BrowserTab
 {
@@ -18,8 +21,10 @@ public sealed class BrowserTab
     public string Title { get; set; } = "";
     public bool Playing { get; set; }
     public bool Suspended { get; set; }
+    public double Zoom { get; set; } = 1.0;
     public DateTime? LastActive { get; set; }
     public string Nonce { get; set; } = "";
+    public PendingCred? Pending { get; set; }
     public int Blocked { get; set; }
     public string? PageHost { get; set; }
     public string? UpgradedHttps { get; set; }

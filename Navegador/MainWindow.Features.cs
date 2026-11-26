@@ -42,6 +42,7 @@ public sealed partial class MainWindow
         _suspendTimer.Tick += (_, _) => SuspendIdleTabs();
         _suspendTimer.Start();
 
+        InitPasswords();
         _bookmarks.Changed += RefreshBookmarksBar;
         AppWindow.Closing += (_, _) => SaveSessionNow();
         RefreshBookmarksBar();
@@ -231,6 +232,7 @@ public sealed partial class MainWindow
         // Atajos de teclado que funcionan también con el foco dentro de la página
         tab.Nonce = Guid.NewGuid().ToString("N");
         _ = core.AddScriptToExecuteOnDocumentCreatedAsync(KeyBridgeTemplate.Replace("__NONCE__", tab.Nonce));
+        RegisterCredBridge(tab, core);
         core.WebMessageReceived += (_, e) => OnWebMessage(tab, e);
 
         core.SourceChanged += (_, _) =>
@@ -238,7 +240,12 @@ public sealed partial class MainWindow
             ApplySiteZoom(tab);
             SaveSessionSoon();
         };
-        core.NavigationCompleted += (_, _) => SaveSessionSoon();
+        core.DOMContentLoaded += (sender, args) => { _ = ApplyZoomAsync(tab); };
+        core.NavigationCompleted += (sender, args) =>
+        {
+            SaveSessionSoon();
+            if (tab.Pending is not null && args.IsSuccess) _ = OfferSaveAsync(tab);
+        };
 
         core.IsDocumentPlayingAudioChanged += (_, _) =>
         {
@@ -262,6 +269,7 @@ public sealed partial class MainWindow
         }
         CloseFind();
         HideSuggestions();
+        NewPwPopup.IsOpen = false;
         SaveSessionSoon();
     }
 
@@ -272,7 +280,18 @@ public sealed partial class MainWindow
 
         var prefix = "navegador:" + tab.Nonce + ":";
         if (message is null || tab.Nonce.Length == 0 || !message.StartsWith(prefix, StringComparison.Ordinal)) return;
-        RunShortcut(tab, message[prefix.Length..]);
+        var action = message[prefix.Length..];
+        if (action.StartsWith("cred:", StringComparison.Ordinal))
+        {
+            OnCredMessage(tab, action[5..], e.Source);
+            return;
+        }
+        if (action.StartsWith("newpw:", StringComparison.Ordinal))
+        {
+            OnNewPasswordField(tab, action[6..], e.Source);
+            return;
+        }
+        RunShortcut(tab, action);
     }
 
     private void RunShortcut(BrowserTab tab, string action)
@@ -492,23 +511,26 @@ public sealed partial class MainWindow
 
     // ───────────── Zoom ─────────────
 
+    // WinUI 3 no expone el zoom nativo de WebView2 en el control, así que se aplica con la propiedad CSS «zoom»
+    // de la página (se vuelve a aplicar cada vez que carga un documento nuevo).
     private void ZoomBy(double delta)
     {
         var tab = CurrentTab;
-        var view = tab?.View;
-        if (view is null) return;
+        if (tab?.View?.CoreWebView2 is null) return;
 
-        var zoom = Math.Clamp(Math.Round((view.ZoomFactor + delta) * 100) / 100, 0.25, 5.0);
-        view.ZoomFactor = zoom;
-        SaveSiteZoom(tab!.PageHost, zoom);
+        tab.Zoom = Math.Clamp(Math.Round((tab.Zoom + delta) * 100) / 100, 0.25, 5.0);
+        SaveSiteZoom(tab.PageHost, tab.Zoom);
+        _ = ApplyZoomAsync(tab);
     }
 
     private void ZoomReset()
     {
         var tab = CurrentTab;
-        if (tab?.View is null) return;
-        tab.View.ZoomFactor = 1.0;
+        if (tab?.View?.CoreWebView2 is null) return;
+
+        tab.Zoom = 1.0;
         SaveSiteZoom(tab.PageHost, 1.0);
+        _ = ApplyZoomAsync(tab);
     }
 
     private void SaveSiteZoom(string? host, double zoom)
@@ -521,15 +543,30 @@ public sealed partial class MainWindow
 
     private void ApplySiteZoom(BrowserTab tab)
     {
-        var view = tab.View;
-        if (view is null) return;
-        var zoom = tab.PageHost is { } host && _settings.SiteZoom.TryGetValue(host, out var saved) ? saved : 1.0;
-        if (Math.Abs(view.ZoomFactor - zoom) > 0.001) view.ZoomFactor = zoom;
+        tab.Zoom = tab.PageHost is { } host && _settings.SiteZoom.TryGetValue(host, out var saved) ? saved : 1.0;
+        _ = ApplyZoomAsync(tab);
+    }
+
+    private static async Task ApplyZoomAsync(BrowserTab tab)
+    {
+        var core = tab.View?.CoreWebView2;
+        if (core is null) return;
+
+        var value = Math.Abs(tab.Zoom - 1.0) < 0.001
+            ? "''"
+            : "'" + tab.Zoom.ToString(System.Globalization.CultureInfo.InvariantCulture) + "'";
+        try
+        {
+            await core.ExecuteScriptAsync("if (document.documentElement) document.documentElement.style.zoom = " + value + ";");
+        }
+        catch
+        {
+        }
     }
 
     private void MainMenu_Opening(object? sender, object e)
     {
-        var zoom = (int)Math.Round((CurrentTab?.View?.ZoomFactor ?? 1.0) * 100);
+        var zoom = (int)Math.Round((CurrentTab?.Zoom ?? 1.0) * 100);
         ZoomResetItem.Text = $"Zoom: {zoom}% (restablecer)";
         BookmarksBarToggle.IsChecked = _settings.ShowBookmarksBar;
     }
@@ -559,7 +596,7 @@ public sealed partial class MainWindow
         if (file is null) return;
         try
         {
-            await core.PrintToPdfAsync(file.Path);
+            await core.PrintToPdfAsync(file.Path, core.Environment.CreatePrintSettings());
         }
         catch
         {

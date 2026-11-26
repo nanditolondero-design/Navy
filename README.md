@@ -19,6 +19,7 @@
 - **Pestañas integradas en la barra de título**, con atajos de teclado que funcionan también dentro de la página. Menú por pestaña (duplicar, silenciar, cerrar las demás), indicador de sonido, reabrir la última cerrada y restaurar las pestañas al abrir.
 - **Página de inicio** con buscador y favoritos, **barra de marcadores** y **sugerencias** en la barra de direcciones (marcadores, historial y búsqueda).
 - **Buscar en la página**, zoom por sitio, imprimir, guardar como PDF, herramientas de desarrollo y pantalla completa (también para videos).
+- **Gestor de contraseñas** con bóveda cifrada (AES-256-GCM, clave derivada con PBKDF2 de tu contraseña maestra): ofrece guardar al iniciar sesión, completa los formularios desde la llave de la barra, genera contraseñas seguras, sugiere una contraseña segura en los formularios de registro, avisa de las repetidas y débiles, se bloquea solo a los 15 minutos y se puede desbloquear con Windows Hello (huella, rostro o PIN). Importa el CSV de Chrome, Edge, Firefox o Bitwarden y exporta a CSV.
 - **Permisos por sitio** (cámara, micrófono, ubicación, notificaciones) con una lista para revisarlos, y **ahorro de memoria** que suspende las pestañas sin uso.
 - **Tirador en forma de gota** pegado al borde izquierdo para abrir y cerrar el explorador de archivos.
 - **Instalador** (`Navegador-Setup.exe`) generado por GitHub Actions, sin permisos de administrador, y registro para aparecer en la lista de navegadores de Windows.
@@ -35,6 +36,10 @@
 | Modo incógnito | Descargas |
 | :---: | :---: |
 | <img src="docs/screenshots/incognito.png" alt="Modo incógnito"> | <img src="docs/screenshots/descargas.png" alt="Pestaña de descargas"> |
+
+| Gestor de contraseñas |
+| :---: |
+| <img src="docs/screenshots/contrasenas.png" alt="Gestor de contraseñas" width="700"> |
 
 | Página de inicio | Explorador de archivos |
 | :---: | :---: |
@@ -99,6 +104,7 @@ El ejecutable queda en `publish/Navegador.exe`.
 Navegador/
 ├─ MainWindow.xaml(.cs)      Ventana, pestañas, barra de direcciones y escudos
 ├─ MainWindow.Features.cs    Búsqueda, zoom, sesión, sugerencias, marcadores, permisos y más
+├─ MainWindow.Passwords.cs   Guardar y autocompletar contraseñas
 ├─ BrowserTab.cs             Modelo de pestaña (web o página interna)
 ├─ Models/                   Marcadores, historial y descargas
 ├─ Services/                 Adblock, perfiles, ajustes, historial, importador de Chrome
@@ -115,12 +121,25 @@ docs/                        Ícono y capturas usados en este README
 └─ screenshots.yml           Genera las capturas y las guarda en docs/screenshots
 ```
 
+## Contraseñas: cómo funciona y qué cuidar
+
+- **Importar desde Chrome:** en Chrome, `Configuración → Autocompletar y contraseñas → Administrador de contraseñas → Exportar contraseñas`
+  (Chrome pide la contraseña de Windows). Después, en Navegador, `Menú → Contraseñas → Importar CSV`. Al terminar, el navegador ofrece borrar ese archivo,
+  que tiene las contraseñas sin cifrar. No se leen directamente de la base de datos de Chrome: Chrome las protege a propósito para que ninguna otra app pueda extraerlas.
+- **Contraseña maestra:** no se guarda en ningún lado. Si se pierde, la única salida es borrar la bóveda y empezar de nuevo.
+- **Autocompletado:** nunca se completa solo. Lo elegís desde la llave de la barra de direcciones, y no se completan páginas sin HTTPS.
+- **Registro de cuentas:** al entrar a un campo de contraseña nueva aparece una sugerencia segura; si la usás, se completa también la confirmación y al enviar el formulario el navegador ofrece guardarla.
+- **Windows Hello:** la clave de la bóveda se cifra con una firma que solo da el chip de seguridad de Windows después de identificarte; si Windows reinicia esa clave (por ejemplo al cambiar el PIN) o falla, se vuelve a pedir la contraseña maestra. Cambiar la contraseña maestra, exportar y editar la bóveda siguen pidiendo la contraseña maestra.
+- **Incógnito:** en las pestañas de incógnito no se ofrece guardar contraseñas.
+- **Portapapeles:** al copiar una contraseña no queda en el historial de Windows y se borra a los 30 segundos.
+
 ## Limitaciones actuales
 
 - No hay extensiones: WebView2 no instala las de la Chrome Web Store.
-- No hay gestor de contraseñas propio ni sincronización entre dispositivos (Google no ofrece una API pública para Chrome Sync).
+- No hay sincronización entre dispositivos (Google no ofrece una API pública para Chrome Sync), ni app móvil.
 - El bloqueo cubre reglas de red y ocultamiento de elementos de las listas de filtros; no incluye reglas con expresiones regulares ni filtros avanzados (por ejemplo, los anuncios de video de YouTube).
-- Del importador de Chrome faltan contraseñas, cookies y extensiones: Chrome las cifra con una clave atada a su propio programa.
+- Del importador directo de Chrome (marcadores e historial) faltan cookies y extensiones.
+- El gestor de contraseñas detecta los formularios de registro por pistas de la página (campos `new-password`, contraseña más confirmación, o palabras como «registro»); en sitios muy atípicos puede no aparecer la sugerencia.
 - Una segunda ventana no reutiliza la primera: cada vez que se abre un enlace desde otra app se abre una ventana nueva.
 - No hay actualizaciones automáticas: hay que instalar la versión nueva encima.
 
