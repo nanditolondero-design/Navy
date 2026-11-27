@@ -867,12 +867,6 @@ public sealed partial class MainWindow
         return (result == ContentDialogResult.Primary, check.IsChecked == true && result != ContentDialogResult.None);
     }
 
-    // ───────────── Tirador en forma de gota ─────────────
-
-    private void DropHandle_Tapped(object sender, TappedRoutedEventArgs e) => SetDrawer(!_drawerOpen);
-    private void DropHandle_PointerEntered(object sender, PointerRoutedEventArgs e) => DropHandle.Opacity = 1.0;
-    private void DropHandle_PointerExited(object sender, PointerRoutedEventArgs e) => DropHandle.Opacity = 0.85;
-
     // ───────────── Eventos de menú y atajos ─────────────
 
     private void Reopen_Click(object sender, RoutedEventArgs e) => ReopenClosedTab();

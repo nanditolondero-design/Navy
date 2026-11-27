@@ -272,15 +272,21 @@
 
             <views:FileExplorerPanel x:Name="Explorer" Grid.Column="0" Visibility="Collapsed"/>
 
-            <!-- Tirador en forma de gota, pegado al borde izquierdo (o al borde del cajón cuando está abierto).
-                 Tiene su propia columna: la página web no se puede tapar con elementos de la ventana. -->
-            <Grid x:Name="DropHandle" Grid.Column="1" Width="26" Height="72"
-                  HorizontalAlignment="Left" VerticalAlignment="Center" Background="Transparent" Opacity="0.85"
-                  Tapped="DropHandle_Tapped" PointerEntered="DropHandle_PointerEntered" PointerExited="DropHandle_PointerExited"
+            <!-- Tirador en forma de gota pegado al borde izquierdo (o al borde del cajón cuando está abierto).
+                 La franja mide 16 px de ancho y todo el alto: la gota se dibuja en código y sigue al mouse.
+                 Tiene su propia columna porque la página web no se puede tapar con elementos de la ventana. -->
+            <Grid x:Name="DropHandle" Grid.Column="1" Width="16" HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                  Background="Transparent"
+                  Tapped="DropHandle_Tapped"
+                  PointerEntered="DropHandle_PointerEntered" PointerExited="DropHandle_PointerExited"
+                  PointerMoved="DropHandle_PointerMoved" PointerPressed="DropHandle_PointerPressed"
+                  PointerReleased="DropHandle_PointerReleased" PointerCanceled="DropHandle_PointerExited"
+                  SizeChanged="DropHandle_SizeChanged"
                   ToolTipService.ToolTip="Explorador de archivos (Ctrl+E)">
-                <Path Fill="#FF705CFF" Data="M0,0 C14,0 26,16 26,36 C26,56 14,72 0,72 Z"/>
-                <FontIcon x:Name="DropHandleIcon" Glyph="&#xE76C;" FontSize="12" Foreground="White"
-                          HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                <Canvas IsHitTestVisible="False">
+                    <Path x:Name="DropPath" Fill="#FF705CFF"/>
+                    <FontIcon x:Name="DropHandleIcon" Glyph="&#xE76C;" FontSize="11" Foreground="White" Opacity="0"/>
+                </Canvas>
             </Grid>
 
             <Grid x:Name="ContentHost" Grid.Column="2"/>

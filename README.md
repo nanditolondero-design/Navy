@@ -21,7 +21,7 @@
 - **Buscar en la página**, zoom por sitio, imprimir, guardar como PDF, herramientas de desarrollo y pantalla completa (también para videos).
 - **Gestor de contraseñas** con bóveda cifrada (AES-256-GCM, clave derivada con PBKDF2 de tu contraseña maestra): ofrece guardar al iniciar sesión, completa los formularios desde la llave de la barra, genera contraseñas seguras, sugiere una contraseña segura en los formularios de registro, avisa de las repetidas y débiles, se bloquea solo a los 15 minutos y se puede desbloquear con Windows Hello (huella, rostro o PIN). Importa el CSV de Chrome, Edge, Firefox o Bitwarden y exporta a CSV.
 - **Permisos por sitio** (cámara, micrófono, ubicación, notificaciones) con una lista para revisarlos, y **ahorro de memoria** que suspende las pestañas sin uso.
-- **Tirador en forma de gota** pegado al borde izquierdo para abrir y cerrar el explorador de archivos.
+- **Tirador en forma de gota** pegado al borde izquierdo para abrir y cerrar el explorador de archivos: en reposo es una tira finita y casi transparente aplastada contra el borde; al acercar el mouse se estira hacia el cursor y lo sigue de arriba a abajo, y al hacer clic se aprieta un poco.
 - **Instalador** (`Navegador-Setup.exe`) generado por GitHub Actions, sin permisos de administrador, y registro para aparecer en la lista de navegadores de Windows.
 - **Modo incógnito:** perfil temporal aislado que se borra al cerrar la última pestaña y no guarda historial.
 - **Descargas:** pestaña propia con progreso y un selector para elegir dónde guardar cada archivo. La lista se guarda entre sesiones.
